@@ -1,0 +1,99 @@
+1.#Import the required Libraries
+import numpy as np
+import pandas as pd
+import pydotplus
+from sklearn import tree, metrics
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import classification_report 
+
+#1.Importing Dataset 
+#1.1 Loading data
+data = pd.read_csv("SampData_DecisionTree.csv")
+
+data.head()
+
+#1.2Checking a few information about the data set
+print ("Dataset info: ")
+data.info() 
+# Printing the dataswet shape 
+print ("Dataset Lenght: ", len(data)) 
+print ("Dataset Shape: ", data.shape) 
+      
+#2. Identify the target variable
+#2.1Values need to converted for categorical 
+data['Income'], Income_names = pd.factorize(data['Income'])
+
+#2.2 Check the encoded values now
+print(Income_names)
+print(data['Income'].unique())
+
+#2.3 Identify the predictor variables and encode any string variables to equivalent integer codes
+#data['age'],_ = pd.factorize(data['age'])
+data['workclass'],_ = pd.factorize(data['workclass'])
+data['education'],_ = pd.factorize(data['education'])
+data['marital-status'],_ = pd.factorize(data['marital-status'])
+data['occupation'],_ = pd.factorize(data['occupation'])
+data['relationship'],_ = pd.factorize(data['relationship'])
+data['race'],_ = pd.factorize(data['race'])
+data['sex'],_ = pd.factorize(data['sex'])
+#data['hours-per-week'],_ = pd.factorize(data['hours-per-week'])
+data['native-country'],_ = pd.factorize(data['native-country'])
+data.head()
+
+#2.4 Check the data types
+print ("Dataset info after factorize: ")
+data.info()
+
+#3. Sampling: Train and Test
+# 3.1 Seperating the target variable 
+X = data.values[:,:-1] 
+Y = data.values[:,-1]  
+#X = data.iloc[:,:-1] 
+#Y = data.iloc[:,-1]  
+print("X shape:", X.shape)
+print("Y shape:", Y.shape)  
+
+# 3.2 Spliting the dataset into 70% training and 30% test
+X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size = 0.3, random_state = 100)
+
+#3.3 Check the number of rows in each dataset checking their dimension
+print(X_train.shape)
+print(X_test.shape)
+print(y_train.shape)
+print(y_test.shape)
+
+#4. Training/model fitting
+#4.1 Creating the classifier object using entropy
+dtree = tree.DecisionTreeClassifier(criterion='entropy', max_depth=3, min_samples_leaf = 5, random_state=100)
+
+#4.2 Train the decision tree
+dtree.fit(X_train, y_train)
+
+#5. Prediction
+#5.1 Using the model to make predictions with the test data
+y_pred = dtree.predict(X_test)
+
+#5.2 Checking how the model performed
+count_misclassified = (y_test != y_pred).sum()
+print('Misclassified samples: {}'.format(count_misclassified))
+
+accuracy = metrics.accuracy_score(y_test, y_pred)
+print('Accuracy: {:.2f}'.format(accuracy))
+
+#Confusion Matrix with Entropy
+print("Confusion Matrix: ", confusion_matrix(y_test, y_pred))
+
+#Classification Report
+print("Classification Report: ", classification_report(y_test, y_pred))
+
+#6. Plotting tree
+feature_names = ['age','workclass', 'education', 'marital-status', 'occupation',
+                 'relationship', 'race', 'sex', 'hours-per-week', 'native-country']
+        
+dot_data = tree.export_graphviz(dtree, out_file=None, filled=True, rounded=True,
+                                feature_names=feature_names,  
+                                class_names=Income_names)
+
+graph = pydotplus.graph_from_dot_data(dot_data)
+graph.write_png('tree.png')
